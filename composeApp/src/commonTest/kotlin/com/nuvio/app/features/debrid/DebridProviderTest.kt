@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class DebridProviderTest {
     @Test
     fun `torbox exposes local addon capabilities`() {
-        assertTrue(DebridProviders.Torbox.authMethod == DebridProviderAuthMethod.DeviceCode)
+        assertTrue(DebridProviders.Torbox.authMethod == DebridProviderAuthMethod.ApiKey)
         assertTrue(DebridProviders.Torbox.supports(DebridProviderCapability.ClientResolve))
         assertTrue(DebridProviders.Torbox.supports(DebridProviderCapability.LocalTorrentCacheCheck))
         assertTrue(DebridProviders.Torbox.supports(DebridProviderCapability.LocalTorrentResolve))

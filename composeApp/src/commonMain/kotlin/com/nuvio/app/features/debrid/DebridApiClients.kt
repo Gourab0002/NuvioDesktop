@@ -31,26 +31,6 @@ internal object TorboxApiClient {
     // Torbox returns up to 1,000 items, each with its full files array.
     private const val cloudListResponseMaxBytes = 16 * 1024 * 1024
 
-    suspend fun startDeviceAuthorization(
-        appName: String,
-    ): DebridApiResponse<TorboxEnvelopeDto<TorboxDeviceAuthorizationDto>> =
-        requestWithoutAuth(
-            method = "GET",
-            url = "$BASE_URL/v1/api/user/auth/device/start?${
-                queryString("app" to appName)
-            }",
-        )
-
-    suspend fun redeemDeviceAuthorization(
-        deviceCode: String,
-    ): DebridApiResponse<TorboxEnvelopeDto<TorboxDeviceTokenDto>> =
-        requestWithoutAuth(
-            method = "POST",
-            url = "$BASE_URL/v1/api/user/auth/device/token",
-            body = DebridApiJson.json.encodeToString(TorboxDeviceTokenRequestDto(deviceCode = deviceCode)),
-            contentType = "application/json",
-        )
-
     suspend fun validateApiKey(apiKey: String): Boolean =
         getUser(apiKey.trim()).status in 200..299
 

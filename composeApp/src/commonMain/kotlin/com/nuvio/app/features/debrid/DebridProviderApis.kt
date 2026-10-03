@@ -63,32 +63,6 @@ private class TorboxDebridProviderApi(
     override suspend fun validateApiKey(apiKey: String): Boolean =
         TorboxApiClient.validateApiKey(apiKey)
 
-    override suspend fun startDeviceAuthorization(appName: String): DebridDeviceAuthorization? {
-        val response = TorboxApiClient.startDeviceAuthorization(appName = appName)
-        val data = response.body?.takeIf { response.isSuccessful && it.success != false }?.data
-            ?: return null
-        val deviceCode = data.deviceCode?.takeIf { it.isNotBlank() } ?: return null
-        val userCode = data.code?.takeIf { it.isNotBlank() } ?: return null
-        val verificationUrl = data.verificationUrl?.takeIf { it.isNotBlank() } ?: return null
-        return DebridDeviceAuthorization(
-            providerId = provider.id,
-            deviceCode = deviceCode,
-            userCode = userCode,
-            verificationUrl = verificationUrl,
-            friendlyVerificationUrl = data.friendlyVerificationUrl?.takeIf { it.isNotBlank() }
-                ?: verificationUrl,
-            intervalSeconds = data.interval?.coerceAtLeast(1) ?: 5,
-            expiresAt = data.expiresAt?.takeIf { it.isNotBlank() },
-        )
-    }
-
-    override suspend fun redeemDeviceAuthorization(deviceCode: String): DebridDeviceAuthorizationTokenResult {
-        val normalized = deviceCode.trim()
-        if (normalized.isBlank()) return DebridDeviceAuthorizationTokenResult.Failed(null)
-        val response = TorboxApiClient.redeemDeviceAuthorization(deviceCode = normalized)
-        return torboxDeviceAuthorizationTokenResult(response)
-    }
-
     override suspend fun resolveClientStream(
         stream: StreamItem,
         apiKey: String,
@@ -297,39 +271,6 @@ internal fun premiumizeDeviceAuthorizationFromResponse(
         intervalSeconds = data.interval?.coerceAtLeast(1) ?: 5,
         expiresAt = data.expiresIn?.takeIf { it > 0 }?.let { "${it}s" },
     )
-}
-
-internal fun torboxDeviceAuthorizationTokenResult(
-    response: DebridApiResponse<TorboxEnvelopeDto<TorboxDeviceTokenDto>>,
-): DebridDeviceAuthorizationTokenResult {
-    val envelope = response.body
-    val accessToken = envelope
-        ?.takeIf { response.isSuccessful && it.success != false }
-        ?.data
-        ?.accessToken
-        ?.takeIf { it.isNotBlank() }
-    if (accessToken != null) {
-        return DebridDeviceAuthorizationTokenResult.Authorized(accessToken)
-    }
-    val message = listOfNotNull(envelope?.error, envelope?.detail, response.rawBody)
-        .joinToString(" ")
-        .lowercase()
-    return when {
-        message.contains("pending") ||
-            message.contains("not authorized") ||
-            message.contains("not been used") ||
-            message.contains("not used yet") ||
-            message.contains("scan the code") ->
-            DebridDeviceAuthorizationTokenResult.Pending
-        message.contains("expired") ->
-            DebridDeviceAuthorizationTokenResult.Expired
-        response.status == 404 || response.status == 409 || response.status == 425 ->
-            DebridDeviceAuthorizationTokenResult.Pending
-        response.status == 410 ->
-            DebridDeviceAuthorizationTokenResult.Expired
-        else ->
-            DebridDeviceAuthorizationTokenResult.Failed(envelope?.detail ?: envelope?.error)
-    }
 }
 
 internal fun premiumizeDeviceAuthorizationTokenResult(
