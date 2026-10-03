@@ -94,7 +94,7 @@ jobs:
 
             unexpected_changes="$(
               git diff --name-only "${CURRENT_BUMP}..${RELEASE_COMMIT}" \
-                | grep -Ev '^(\.github/workflows/desktop-release\.yml|scripts/(generate-release-notes|release-metadata)\.sh)$' \
+                | grep -Ev '^(\.github/workflows/desktop-release\.yml|scripts/(generate-release-notes|release-metadata)\.sh|scripts/linux/configure-desktop-runtime\.sh)$' \
                 || true
             )"
             if [[ -n "${unexpected_changes}" ]]; then
@@ -190,8 +190,6 @@ jobs:
         run: |
           required_values=(
             LOCAL_PROPERTIES_BASE64
-            SENTRY_AUTH_TOKEN
-            SENTRY_DESKTOP_DSN
           )
           if [[ "${MACOS_NOTARIZATION_ENABLED}" == "true" ]]; then
             required_values+=(
@@ -295,7 +293,6 @@ jobs:
         run: |
           ./gradlew \
             :composeApp:notarizeReleaseDmgWithKeychain \
-            :desktopSentry:sentryUploadSourceBundleJava \
             "-Pnuvio.macos.arch=${MACOS_ARCH}" \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
@@ -311,7 +308,6 @@ jobs:
         run: |
           ./gradlew \
             :composeApp:packageReleaseDmg \
-            :desktopSentry:sentryUploadSourceBundleJava \
             "-Pnuvio.macos.arch=${MACOS_ARCH}" \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
@@ -423,8 +419,6 @@ jobs:
           missing=()
           required_values=(
             LOCAL_PROPERTIES_BASE64
-            SENTRY_AUTH_TOKEN
-            SENTRY_DESKTOP_DSN
           )
           for value_name in "${required_values[@]}"; do
             if [[ -z "${!value_name}" ]]; then
@@ -474,7 +468,6 @@ jobs:
         run: |
           & .\gradlew.bat `
             :composeApp:packageReleaseMsi `
-            :desktopSentry:sentryUploadSourceBundleJava `
             "-Pnuvio.webview2.dir=$env:WEBVIEW2_ROOT" `
             "-Pcompose.desktop.packaging.checkJdkVendor=false" `
             --no-configuration-cache `
@@ -627,7 +620,6 @@ jobs:
           set -euo pipefail
           ./gradlew \
             :composeApp:createReleaseDistributable \
-            :desktopSentry:sentryUploadSourceBundleJava \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
             --no-daemon \
@@ -761,7 +753,6 @@ jobs:
           set -euo pipefail
           ./gradlew \
             :composeApp:packageReleaseDeb \
-            :desktopSentry:sentryUploadSourceBundleJava \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
             --no-daemon \
@@ -844,7 +835,6 @@ jobs:
           set -euo pipefail
           ./gradlew \
             :composeApp:packageReleaseRpm \
-            :desktopSentry:sentryUploadSourceBundleJava \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
             --no-daemon \
@@ -956,7 +946,6 @@ jobs:
 
           ./gradlew \
             :composeApp:packageReleaseAppImage \
-            :desktopSentry:sentryUploadSourceBundleJava \
             -Pcompose.desktop.packaging.checkJdkVendor=false \
             --no-configuration-cache \
             --no-daemon \
